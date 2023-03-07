@@ -1,24 +1,49 @@
 {
-  "name": "guesslanguage",
-  "version": "0.4.0",
-  "description": "Guess the natural language of a run of text",
-  "keywords": [
-    "guesslanguage",
-    "guess_language",
-    "guesslanguage.js"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/richtr/guessLanguage.js"
-  },
-  "bugs": { "url": "https://github.com/richtr/guessLanguage.js/issues" },
-  "author": "Rich Tibbett <rich.tibbett@gmail.com>",
-  "license": "LGPL",
-  "main": "./lib/guessLanguage",
-  "engines": {
-    "node": ">= 0.4"
-  },
+  "name": "guesslanguage-ng",
+  "version": "0.0.1",
+  "description": "React mixed Vue 3.0 API with type safety",
+  "main": "./dist/index.js",
+  "module": "./dist/index.es.js",
+  "jsnext:main": "./dist/index.es.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "test": "make test"
+    "lint": "eslint './src/**/*.{ts,tsx}'",
+    "lint:fix": "eslint --fix './src/**/*.{ts,tsx}'",
+    "build": "yarn run lint && rollup -c",
+    "start": "rollup -c -w",
+    "clean": "rm -rf dist",
+    "demo": "nodemon --exec 'cd demo && yarn && yarn run dev'",
+    "deploy": "yarn run clean && yarn run build && yarn publish --registry http://registry.npmjs.org",
+    "test": "jest"
+  },
+  "author": "yetone <yetoneful@gmail.com>",
+  "license": "MIT",
+  "repository": "yetone/guessLanguage.ts",
+   "devDependencies": {
+    "@testing-library/react": "^9.1.3",
+    "@types/jest": "^24.0.18",
+    "@types/node": "^10.12.18",
+    "@types/react": "^16.9.2",
+    "@types/react-dom": "^16.9.0",
+    "@types/rollup": "^0.54.0",
+    "@types/source-map": "0.5.2",
+    "@typescript-eslint/eslint-plugin": "^5.54.1",
+    "@typescript-eslint/parser": "^5.54.1",
+    "eslint": "^8.35.0",
+    "eslint-config-prettier": "^8.7.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "jest": "^24.9.0",
+    "nodemon": "^1.17.5",
+    "prettier": "^1.18.2",
+    "rollup": "^1.19.4",
+    "rollup-plugin-babel": "^4.3.3",
+    "rollup-plugin-commonjs": "^10.0.2",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-peer-deps-external": "^2.2.0",
+    "rollup-plugin-typescript2": "^0.22.1",
+    "ts-jest": "^24.0.2",
+    "ts-loader": "^5.2.2",
+    "ts-node": "^7.0.1",
+    "typescript": "4.9.5"
   }
 }
