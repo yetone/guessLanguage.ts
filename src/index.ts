@@ -1,7 +1,7 @@
 /* eslint-disable no-control-regex */
 import { languages } from './languages'
 
-export function guessLanguage() {
+export default function guessLanguage() {
     const models: Record<string, string> = languages
 
     const MAX_LENGTH = 4096
@@ -431,23 +431,20 @@ export function guessLanguage() {
         return relevantRuns
     }
 
-    function identify(text: string, callback: any) {
+    async function identify(text: string): Promise<string> {
         const scripts = findRuns(text)
 
         // Identify the language.
         if (scripts['Hangul Syllables'] + scripts['Hangul Jamo'] + scripts['Hangul Compatibility Jamo'] >= 0.4) {
-            callback.apply(undefined, ['ko'])
-            return
+            return 'ko'
         }
 
         if (scripts['Greek and Coptic'] >= 0.4) {
-            callback.apply(undefined, ['el'])
-            return
+            return 'el'
         }
 
         if (scripts['Hiragana'] + scripts['Katakana'] + scripts['Katakana Phonetic Extensions'] >= 0.2) {
-            callback.apply(undefined, ['ja'])
-            return
+            return 'ja'
         }
 
         if (
@@ -457,60 +454,50 @@ export function guessLanguage() {
                 scripts['KangXi Radicals'] >=
             0.4
         ) {
-            callback.apply(undefined, ['zh'])
-            return
+            return 'zh'
         }
 
         if (scripts['Cyrillic'] >= 0.4) {
-            check(text, CYRILLIC, callback)
-            return
+            return await check(text, CYRILLIC)
         }
 
         if (
             scripts['Arabic'] + scripts['Arabic Presentation Forms-A'] + scripts['Arabic Presentation Forms-B'] >=
             0.4
         ) {
-            check(text, ARABIC, callback)
-            return
+            return await check(text, ARABIC)
         }
 
         if (scripts['Devanagari'] >= 0.4) {
-            check(text, DEVANAGARI, callback)
-            return
+            return await check(text, DEVANAGARI)
         }
 
         // Try languages with unique scripts
         for (let i = 0, l = SINGLETONS.length; i < l; i++) {
             if (scripts[SINGLETONS[i][0]] >= 0.4) {
-                callback.apply(undefined, [SINGLETONS[i][1]])
-                return
+                return SINGLETONS[i][1]
             }
         }
 
         // Extended Latin
         if (scripts['Latin-1 Supplement'] + scripts['Latin Extended-A'] + scripts['IPA Extensions'] >= 0.4) {
-            check(text, EXTENDED_LATIN, function(latinLang: string) {
-                if (latinLang == 'pt') {
-                    check(text, PT, callback)
-                } else {
-                    callback.apply(undefined, [latinLang])
-                }
-            })
-            return
+            const latinLang = await check(text, EXTENDED_LATIN)
+            if (latinLang == 'pt') {
+                return await check(text, PT)
+            }
+            return latinLang
         }
 
         if (scripts['Basic Latin'] >= 0.15) {
-            check(text, ALL_LATIN, callback)
-            return
+            return await check(text, ALL_LATIN)
         }
 
-        callback.apply(undefined, [UNKNOWN])
+        return UNKNOWN
     }
 
-    function check(sample: string, langs: string[], callback: { (latinLang: string): void; apply?: any }) {
+    async function check(sample: string, langs: string[]): Promise<string> {
         if (sample.length < MIN_LENGTH) {
-            callback.apply(undefined, [UNKNOWN])
-            return
+            return UNKNOWN
         }
 
         const scores: Record<string, number> = {}
@@ -533,8 +520,7 @@ export function guessLanguage() {
         }
 
         if (scoresArr.length == 0) {
-            callback.apply(undefined, [UNKNOWN])
-            return
+            return UNKNOWN
         }
 
         // we want the lowest score, less distance = greater chance of match
@@ -543,7 +529,7 @@ export function guessLanguage() {
         })
 
         // return the best match we've now calculated
-        callback.apply(undefined, [sortedScores[0][0]])
+        return sortedScores[0][0] as string
     }
 
     function createOrderedModel(content_: string) {
@@ -619,53 +605,47 @@ export function guessLanguage() {
     }
 
     return {
-        detect: function(text: string, callback: { apply: (arg0: undefined, arg1: string[]) => void }) {
+        detect: async function(text: string) {
             // Return the ISO 639-2 language identifier, i.e. 'en'.
 
             if (!text) {
-                callback.apply(undefined, [UNKNOWN])
-                return
+                return UNKNOWN
             }
 
             text = text.slice(0, MAX_LENGTH).replace(/[\u0021-\u0040]/g, '')
 
-            identify(text, callback)
+            return await identify(text)
         },
-        info: function(text: string, callback: { apply: (arg0: undefined, arg1: any[][]) => void }) {
+        info: async function(text: string) {
             // Return language info tuple (id, code, name), i.e. ('en', 26110, 'English').
 
-            this.detect(text, function(language: string) {
-                if (language === UNKNOWN) {
-                    callback.apply(undefined, [[UNKNOWN, UNKNOWN, UNKNOWN]])
-                    return
-                }
+            const language = await this.detect(text)
+            if (language === UNKNOWN) {
+                return [UNKNOWN, UNKNOWN, UNKNOWN]
+            }
 
-                callback.apply(undefined, [[language, IANA_MAP[language], NAME_MAP[language]]])
-            })
+            return [language, IANA_MAP[language], NAME_MAP[language]]
         },
-        code: function(text: string, callback: { apply: (arg0: undefined, arg1: any[]) => void }) {
+        code: async function(text: string) {
             // Return the language IANA code, i.e. 26110.
 
-            this.detect(text, function(language: string) {
-                if (language === UNKNOWN) {
-                    callback.apply(undefined, [-1])
-                    return
-                }
+            const language = await this.detect(text)
+            if (language === UNKNOWN) {
+                return -1
+            }
 
-                callback.apply(undefined, [IANA_MAP[language]])
-            })
+            return IANA_MAP[language]
         },
-        name: function(text: string, callback: { apply: (arg0: undefined, arg1: string[]) => void }) {
+        name: async function(text: string) {
             // Return the full language name, i.e. 'English'.
 
-            this.detect(text, function(language: string) {
-                if (language === UNKNOWN) {
-                    callback.apply(undefined, [UNKNOWN])
-                    return
-                }
+            const language = await this.detect(text)
 
-                callback.apply(undefined, [NAME_MAP[language]])
-            })
+            if (language === UNKNOWN) {
+                return UNKNOWN
+            }
+
+            return NAME_MAP[language]
         },
     }
 }
